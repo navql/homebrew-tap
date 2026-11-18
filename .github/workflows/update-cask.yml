@@ -1,0 +1,34 @@
+# Keeps Casks/navql.rb on the latest NavQL release: version and the .dmg's sha256.
+# Runs every 3 hours, by hand, or when the release process calls it
+# (gh workflow run update-cask.yml -R navql/homebrew-tap). Nothing changes until the macOS .dmg
+# of a new release is published.
+name: Update cask
+
+on:
+  schedule:
+    - cron: '23 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Point the cask at the latest release
+        run: |
+          tag=$(curl -fsSL https://api.github.com/repos/navql/releases/releases/latest | jq -r .tag_name)
+          version=${tag#v}
+          current=$(sed -n 's/^  version "\(.*\)"/\1/p' Casks/navql.rb)
+          if [ "$version" = "$current" ]; then echo "already $current"; exit 0; fi
+          url="https://github.com/navql/releases/releases/download/$tag/NavQL-$version-arm64.dmg"
+          if ! curl -fsSL -o navql.dmg "$url"; then echo "$tag has no macOS .dmg yet"; exit 0; fi
+          sha=$(sha256sum navql.dmg | cut -d' ' -f1)
+          rm navql.dmg
+          sed -i "s/^  version \".*\"/  version \"$version\"/; s/^  sha256 \".*\"/  sha256 \"$sha\"/" Casks/navql.rb
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "navql $version"
+          git push
