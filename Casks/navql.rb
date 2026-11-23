@@ -1,6 +1,6 @@
 cask "navql" do
-  version "0.4.17"
-  sha256 "27c14d9af2e905c8fb3667ba771bbc33620f2d1e3a66f7a0f483e36961bdaf27"
+  version "0.4.18"
+  sha256 "d3ac36b754dfb305508d783b5986071201b96178d37629260d26e01b592be44e"
 
   url "https://github.com/navql/releases/releases/download/v#{version}/NavQL-#{version}-arm64.dmg",
       verified: "github.com/navql/releases/"
